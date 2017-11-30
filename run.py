@@ -9,8 +9,8 @@ go = .7
 go_back = .2
 stay = .1
 
-def translate(sx):
-    
+# a number (1-16) to block coordinates in `our_grid`
+def translate(sx): 
     column = (sx % 4) - 1
     if column == -1:
         column = 3
@@ -25,9 +25,38 @@ def translate(sx):
 
     return row, column
 
+# calculate the expected value based on the given `go`, `go_back`, and `stay` constants
 def calculate(current, objective, opposite):
     value = current + (objective * go) + (opposite * go_back) + (current * stay)
     return value
+
+# find the blocks contiguous to the current block, with options to bounce off walls
+def direction_taker(sx, opposite=False, bounce=False):
+    row, column = translate(sx)
+    objectives = []
+    flip = 1
+    if opposite:
+        flip = -1
+
+    for direction in directions:
+        column_change = 0
+        row_change = 0
+        if direction == 'up':
+            row_change = -1 * flip
+        elif direction == 'down':
+            row_change = 1 * flip
+        elif direction == 'right':
+            column_change = 1 * flip
+        elif direction == 'left':
+            column_change = -1 * flip
+        if (row + row_change) < 4 and (row + row_change) > -1 and (column + column_change) < 4 and (column + column_change) > -1:
+            objective = [row + row_change, column + column_change, direction]
+            objectives.append(objective)
+        elif bounce:
+            objective = [row, column, direction]  
+            objectives.append(objective)
+
+    return objectives
 
 # base case, V1
 def v1(sx):
@@ -35,26 +64,16 @@ def v1(sx):
     current_value = our_grid[row][column]
     best_value = 0
     best_direction = 'none'
-    for direction in directions:
-        column_change = 0
-        row_change = 0
-        if direction == 'up':
-            row_change = -1
-        elif direction == 'down':
-            row_change = 1
-        elif direction == 'right':
-            column_change = 1
-        elif direction == 'left':
-            column_change = -1
-        if (row + row_change) < 4 and (row + row_change) > -1 and (column + column_change) < 4 and (column + column_change) > -1:
-            objective = our_grid[row + row_change][column + column_change]
-        else:
-            objective = our_grid[row][column]
-        if (row + (row_change*-1)) < 4 and (row + (row_change*-1)) > -1 and (column + (column_change*-1)) < 4 and (column + (column_change*-1)) > -1:
-            opposite = our_grid[row + (row_change*-1)][column + (column_change*-1)]
-        else:    
-            opposite = our_grid[row][column]
-        value = calculate(current_value, objective, opposite)
+    objectives = direction_taker(sx, opposite=False, bounce=True)
+    opposites = direction_taker(sx, opposite=True, bounce=True)
+
+    for i in range(0,len(objectives)):
+        obj_value = our_grid[objectives[i][0]][objectives[i][1]]
+        ops_value = our_grid[opposites[i][0]][opposites[i][1]]
+        value = calculate(current_value, obj_value, ops_value)
+
+        direction = objectives[i][2]
+
         if value > best_value:
             best_value = value
             best_direction = direction
@@ -64,10 +83,10 @@ def v1(sx):
 def vn(sx, n):
     if n == 1:
         value, direction = v1(sx)
-        if direction != 'none':
-            return round(value, 3), directions[str(direction)]
-        else:
-            return round(value, 3), 'T'
+    if direction != 'none':
+        return round(value, 3), directions[str(direction)]
+    else:
+        return round(value, 3), 'T'
 
 def value_iteration(n):
     output = [[0 for i in range(4)] for j in range(4)] 

@@ -4,6 +4,11 @@ our_grid = [[0, 0, 3, 10],
             [5, 10, 5, 0],
             [45, 0, 0, 5]]
 
+sx_grid = [ [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 16]]
+
 directions = {'right': '->', 'left': '<-', 'up': '/\\', 'down': '\\/'}
 go = .7
 go_back = .2
@@ -59,17 +64,17 @@ def direction_taker(sx, opposite=False, bounce=False):
     return objectives
 
 # base case, V1
-def v1(sx):
+def v1(sx, value_grid):
     row, column = translate(sx)
-    current_value = our_grid[row][column]
+    current_value = value_grid[row][column]
     best_value = 0
     best_direction = 'none'
     objectives = direction_taker(sx, opposite=False, bounce=True)
     opposites = direction_taker(sx, opposite=True, bounce=True)
 
     for i in range(0,len(objectives)):
-        obj_value = our_grid[objectives[i][0]][objectives[i][1]]
-        ops_value = our_grid[opposites[i][0]][opposites[i][1]]
+        obj_value = value_grid[objectives[i][0]][objectives[i][1]]
+        ops_value = value_grid[opposites[i][0]][opposites[i][1]]
         value = calculate(current_value, obj_value, ops_value)
 
         direction = objectives[i][2]
@@ -80,25 +85,45 @@ def v1(sx):
     return best_value, best_direction
 
 # the recursive generalized case
-def vn(sx, n):
+def vn(sx, n, value_grid):
     if n == 1:
-        value, direction = v1(sx)
-    if direction != 'none':
-        return round(value, 3), directions[str(direction)]
-    else:
-        return round(value, 3), 'T'
+        value, direction = v1(sx, value_grid)
+    else: # recursively find adjacent blocks and count down
+        for i in range(0, n):
+            adjacent_blocks = direction_taker(sx)
+            for block in adjacent_blocks:
+                value, direction = vn(sx_grid[block[0]][block[1]], n-1, value_grid)
+                value_grid[block[0]][block[1]] = value
 
-def value_iteration(n):
+    if direction != 'none':
+        #return round(value, 3), directions[str(direction)]
+        return value, direction
+    else:
+        return value, 'T'
+
+def value_iteration(n, value_grid):
     output = [[0 for i in range(4)] for j in range(4)] 
     for i in range(1,17):
         row, column = translate(i)
-        output[row][column] = vn(i, n)
+        output[row][column] = vn(i, n, value_grid)
     return output
 
-array = value_iteration(1)
-for line in array:
-    output = ""
-    for item in line:
-        for small in item:
-            output = output + str(small) + "\t"
-    print(output)
+def pretty_print(policy_grid):
+    for line in array:
+        output = ""
+        for item in line:
+            for small in item:
+                try:
+                    test = int(small)
+                    small = round(small, 3)
+                except:
+                    if small == 'none':
+                        small = 'T'
+                    else:
+                        small = directions[small]
+                output = output + str(small).ljust(8) + "\t"
+        print(output)
+
+#array = value_iteration(2, our_grid)
+#pretty_print(array)
+

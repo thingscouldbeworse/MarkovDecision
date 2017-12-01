@@ -153,12 +153,12 @@ def pretty_print(policy_grid):
 
 def infinite(value_grid):
     try:
-        n = 1
-       
+        n = 1  
+        output = [[0 for i in range(4)] for j in range(4)] 
         grid_levels = [value_grid]
         while True:
+            old_output = copy.deepcopy(output)
             print("level " + str(n))
-            output = [[0 for i in range(4)] for j in range(4)] 
             empty_grid= [[0 for i in range(4)] for j in range(4)] 
             grid_levels.append(copy.deepcopy(empty_grid))
             
@@ -168,6 +168,16 @@ def infinite(value_grid):
                 output[row][column] = value, direction
             n = n + 1
             pretty_print(output)
+            level = 0
+            if n > 2:
+                for i in range(0, 4):
+                    for j in range(0, 4):
+                        if round(output[i][j][0], 5) == round(old_output[i][j][0], 5):
+                            level = level + 1
+                if level > 15:
+                    print("Horizon found")
+                    break
+
 
     except KeyboardInterrupt:
         pass

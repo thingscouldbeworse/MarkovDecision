@@ -1,4 +1,7 @@
 import copy
+import sys
+
+inf_bool = False
 
 our_grid = [[0, 0, 3, 10],
             [0, 5, 0, 60],
@@ -32,9 +35,14 @@ def translate(sx):
     return row, column
 
 # calculate the expected value based on the given `go`, `go_back`, and `stay` constants
-def calculate(current, objective, opposite, remain):
-    print("rem: " + str(remain) + " obj: " + str(objective) + " opp: " + str(opposite) + " cur: " + str(current) )
-    value = remain + (objective * go) + (opposite * go_back) + (current * stay)
+def calculate(current, objective, opposite, remain, verbose=False):
+    if verbose:
+        print("rem: " + str(remain) + " obj: " + str(objective) + " opp: " + str(opposite) + " cur: " + str(current) )
+    if inf_bool:
+        gamma = 0.96
+    else:
+        gamma = 1
+    value = remain + gamma * ((objective * go) + (opposite * go_back) + (current * stay))
     return value
 
 # find the blocks contiguous to the current block, with options to bounce off walls
@@ -90,12 +98,14 @@ def v1(sx, value_grid):
 
 # generalized recursive
 def vn(sx, n, grid_levels):
-    print("v" + str(n) + " of " + str(sx))
+    #print("v" + str(n) + " of " + str(sx))
+    row, column = translate(sx)
+    if grid_levels[n][row][column] != 0:
+        return grid_levels[n][row][column], 'none'
     if n == 1:
         value, direction = v1(sx, grid_levels[0])
     else:
         adjacent_blocks = direction_taker(sx)
-        row, column = translate(sx)
         for block in adjacent_blocks:
             value, direction = vn(sx_grid[block[0]][block[1]], n-1, grid_levels)
             grid_levels[n-1][block[0]][block[1]] = value
@@ -103,7 +113,7 @@ def vn(sx, n, grid_levels):
         grid_levels[n-1][row][column] = value
         value, direction = v1(sx, grid_levels[n-1])
         grid_levels[n][row][column] = value
-    print(value)
+    #print(value)
     return value, direction
 
 def caller(sx, n, value_grid):
@@ -136,7 +146,40 @@ def pretty_print(policy_grid):
                         small = directions[small]
                 output = output + str(small).ljust(8) + "\t"
         print(output)
+    print()
 
 #           sx  n
-print(caller(4, 2, our_grid))
-pretty_print(value_iteration(6, our_grid))
+#print(caller(4, 2, our_grid))
+
+def infinite(value_grid):
+    try:
+        n = 1
+       
+        grid_levels = [value_grid]
+        while True:
+            print("level " + str(n))
+            output = [[0 for i in range(4)] for j in range(4)] 
+            empty_grid= [[0 for i in range(4)] for j in range(4)] 
+            grid_levels.append(copy.deepcopy(empty_grid))
+            
+            for i in range(1,17): 
+                value, direction = vn(i, n, grid_levels)
+                row, column = translate(i)
+                output[row][column] = value, direction
+            n = n + 1
+            pretty_print(output)
+
+    except KeyboardInterrupt:
+        pass
+
+if len(sys.argv) < 2:
+    print("Usage: python run.py [n|inf] as a number for V_n steps, or")
+    print(" 'inf' for infinite running. Ctrl-C to stop, or the program")
+    print(" will stop after levelling off")
+else:
+    if sys.argv[1] == 'inf':
+        inf_bool = True
+        infinite(our_grid)
+    else:
+        pretty_print(value_iteration(int(sys.argv[1]), our_grid))
+

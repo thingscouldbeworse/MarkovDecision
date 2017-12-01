@@ -10,7 +10,7 @@ sx_grid = [ [1, 2, 3, 4],
             [9, 10, 11, 12],
             [13, 14, 15, 16]]
 
-directions = {'right': '->', 'left': '<-', 'up': '/\\', 'down': '\\/'}
+directions = {'right': '>', 'left': '<', 'up': '^', 'down': 'v'}
 go = .7
 go_back = .2
 stay = .1
@@ -32,8 +32,9 @@ def translate(sx):
     return row, column
 
 # calculate the expected value based on the given `go`, `go_back`, and `stay` constants
-def calculate(current, objective, opposite):
-    value = current + (objective * go) + (opposite * go_back) + (current * stay)
+def calculate(current, objective, opposite, remain):
+    print("rem: " + str(remain) + " obj: " + str(objective) + " opp: " + str(opposite) + " cur: " + str(current) )
+    value = remain + (objective * go) + (opposite * go_back) + (current * stay)
     return value
 
 # find the blocks contiguous to the current block, with options to bounce off walls
@@ -77,7 +78,8 @@ def v1(sx, value_grid):
     for i in range(0,len(objectives)):
         obj_value = value_grid[objectives[i][0]][objectives[i][1]]
         ops_value = value_grid[opposites[i][0]][opposites[i][1]]
-        value = calculate(current_value, obj_value, ops_value)
+        remain = our_grid[row][column]
+        value = calculate(current_value, obj_value, ops_value, remain)
 
         direction = objectives[i][2]
 
@@ -87,13 +89,14 @@ def v1(sx, value_grid):
     return best_value, best_direction
 
 # the recursive generalized case
-def vn(sx, n, value_grid):
-    #print("v" + str(n) + " on " + str(sx))
+def vn_dep(sx, n, value_grid):
+    print("v" + str(n) + " on " + str(sx))
     if n == 1:
         value, direction = v1(sx, value_grid)
     else: # recursively find adjacent blocks and count down
         adjacent_blocks = direction_taker(sx)
         row, column = translate(sx)
+        #adjacent_blocks.append([row, column, 'none'])
         adjacent_values = copy.deepcopy(value_grid)
 
         for block in adjacent_blocks:
@@ -106,21 +109,36 @@ def vn(sx, n, value_grid):
 
     return value, direction
 
-def vn_linear(n, pass_grid):
+def vn(sx, n, grid_levels):
+    print("v" + str(n) + " of " + str(sx))
+    if n == 1:
+        value, direction = v1(sx, grid_levels[0])
+    else:
+        adjacent_blocks = direction_taker(sx)
+        row, column = translate(sx)
+        for block in adjacent_blocks:
+            value, direction = vn(sx_grid[block[0]][block[1]], n-1, grid_levels)
+            grid_levels[n-1][block[0]][block[1]] = value
+        value, direction = vn(sx, n-1, grid_levels)
+        grid_levels[n-1][row][column] = value
+        value, direction = v1(sx, grid_levels[n-1])
+        grid_levels[n][row][column] = value
+    print(value)
+    return value, direction
+
+def caller(sx, n, value_grid):
+    grid_levels = [value_grid]
+    empty_grid= [[0 for i in range(4)] for j in range(4)] 
     for i in range(0, n):
-        output = value_iteration(1, pass_grid)
-        pretty_print(output)
-        print()
-        pass_grid = [[0 for i in range(4)] for j in range(4)] 
-        for i in range(0, len(output)):
-            for x in range(0, len(output[i])):
-                pass_grid[i][x] = output[i][x][0]
- 
+        grid_levels.append(copy.deepcopy(empty_grid))
+    value, direction = vn(sx, n, grid_levels)
+    return value, direction
+
 def value_iteration(n, value_grid):
     output = [[0 for i in range(4)] for j in range(4)] 
     for i in range(1,17):
         row, column = translate(i)
-        output[row][column] = vn(i, n, value_grid)
+        output[row][column] = caller(i, n, value_grid)
     return output
 
 def pretty_print(policy_grid):
@@ -139,6 +157,6 @@ def pretty_print(policy_grid):
                 output = output + str(small).ljust(8) + "\t"
         print(output)
 
-#print(vn(4, 3, our_grid))
-vn_linear(6, our_grid)
-
+#           sx  n
+print(caller(4, 2, our_grid))
+pretty_print(value_iteration(6, our_grid))

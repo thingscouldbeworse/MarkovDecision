@@ -178,7 +178,6 @@ def infinite(value_grid):
                     print("Horizon found")
                     break
 
-
     except KeyboardInterrupt:
         pass
 

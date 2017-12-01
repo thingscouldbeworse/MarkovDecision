@@ -88,27 +88,7 @@ def v1(sx, value_grid):
             best_direction = direction
     return best_value, best_direction
 
-# the recursive generalized case
-def vn_dep(sx, n, value_grid):
-    print("v" + str(n) + " on " + str(sx))
-    if n == 1:
-        value, direction = v1(sx, value_grid)
-    else: # recursively find adjacent blocks and count down
-        adjacent_blocks = direction_taker(sx)
-        row, column = translate(sx)
-        #adjacent_blocks.append([row, column, 'none'])
-        adjacent_values = copy.deepcopy(value_grid)
-
-        for block in adjacent_blocks:
-            #print("adjacent block: " + str(block))
-            value, direction = vn(sx_grid[block[0]][block[1]], n-1, value_grid)
-            print("value of " + str(value) +" pointing in direction " + direction)
-            adjacent_values[block[0]][block[1]] = value
-        print("about to update " + str(sx))
-        value, direction = vn(sx, n-1, adjacent_values)
-
-    return value, direction
-
+# generalized recursive
 def vn(sx, n, grid_levels):
     print("v" + str(n) + " of " + str(sx))
     if n == 1:

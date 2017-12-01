@@ -88,7 +88,7 @@ def v1(sx, value_grid):
 
 # the recursive generalized case
 def vn(sx, n, value_grid):
-    print("vn on " + str(sx) + " with n: " + str(n))
+    #print("v" + str(n) + " on " + str(sx))
     if n == 1:
         value, direction = v1(sx, value_grid)
     else: # recursively find adjacent blocks and count down
@@ -99,13 +99,23 @@ def vn(sx, n, value_grid):
         for block in adjacent_blocks:
             #print("adjacent block: " + str(block))
             value, direction = vn(sx_grid[block[0]][block[1]], n-1, value_grid)
-            #print("value of " + str(value) +" pointing in direction " + direction)
+            print("value of " + str(value) +" pointing in direction " + direction)
             adjacent_values[block[0]][block[1]] = value
-
+        print("about to update " + str(sx))
         value, direction = vn(sx, n-1, adjacent_values)
 
     return value, direction
 
+def vn_linear(n, pass_grid):
+    for i in range(0, n):
+        output = value_iteration(1, pass_grid)
+        pretty_print(output)
+        print()
+        pass_grid = [[0 for i in range(4)] for j in range(4)] 
+        for i in range(0, len(output)):
+            for x in range(0, len(output[i])):
+                pass_grid[i][x] = output[i][x][0]
+ 
 def value_iteration(n, value_grid):
     output = [[0 for i in range(4)] for j in range(4)] 
     for i in range(1,17):
@@ -114,13 +124,13 @@ def value_iteration(n, value_grid):
     return output
 
 def pretty_print(policy_grid):
-    for line in array:
+    for line in policy_grid:
         output = ""
         for item in line:
             for small in item:
                 try:
                     test = int(small)
-                    small = round(small, 3)
+                    small = round(small, 5)
                 except:
                     if small == 'none':
                         small = 'T'
@@ -129,7 +139,6 @@ def pretty_print(policy_grid):
                 output = output + str(small).ljust(8) + "\t"
         print(output)
 
-print(vn(3, 3, our_grid))
-#array = value_iteration(3, our_grid)
-#pretty_print(array)
+#print(vn(4, 3, our_grid))
+vn_linear(6, our_grid)
 

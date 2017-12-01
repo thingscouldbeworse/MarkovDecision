@@ -1,3 +1,4 @@
+import copy
 
 our_grid = [[0, 0, 3, 10],
             [0, 5, 0, 60],
@@ -42,8 +43,9 @@ def direction_taker(sx, opposite=False, bounce=False):
     flip = 1
     if opposite:
         flip = -1
-
+    #print("direction taker on " + str(sx))
     for direction in directions:
+        #print("using direction: " + direction)
         column_change = 0
         row_change = 0
         if direction == 'up':
@@ -86,20 +88,23 @@ def v1(sx, value_grid):
 
 # the recursive generalized case
 def vn(sx, n, value_grid):
+    print("vn on " + str(sx) + " with n: " + str(n))
     if n == 1:
         value, direction = v1(sx, value_grid)
     else: # recursively find adjacent blocks and count down
-        for i in range(0, n):
-            adjacent_blocks = direction_taker(sx)
-            for block in adjacent_blocks:
-                value, direction = vn(sx_grid[block[0]][block[1]], n-1, value_grid)
-                value_grid[block[0]][block[1]] = value
+        adjacent_blocks = direction_taker(sx)
+        row, column = translate(sx)
+        adjacent_values = copy.deepcopy(value_grid)
 
-    if direction != 'none':
-        #return round(value, 3), directions[str(direction)]
-        return value, direction
-    else:
-        return value, 'T'
+        for block in adjacent_blocks:
+            #print("adjacent block: " + str(block))
+            value, direction = vn(sx_grid[block[0]][block[1]], n-1, value_grid)
+            #print("value of " + str(value) +" pointing in direction " + direction)
+            adjacent_values[block[0]][block[1]] = value
+
+        value, direction = vn(sx, n-1, adjacent_values)
+
+    return value, direction
 
 def value_iteration(n, value_grid):
     output = [[0 for i in range(4)] for j in range(4)] 
@@ -124,6 +129,7 @@ def pretty_print(policy_grid):
                 output = output + str(small).ljust(8) + "\t"
         print(output)
 
-#array = value_iteration(2, our_grid)
+print(vn(3, 3, our_grid))
+#array = value_iteration(3, our_grid)
 #pretty_print(array)
 
